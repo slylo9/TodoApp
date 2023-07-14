@@ -1,0 +1,42 @@
+name: Trigger auto deployment for continuous-deployment-test-app
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/continuous-deployment-test-app-AutoDeployTrigger-becadf3a-5425-4d2e-b762-80a7084d3c8b.yml'
+
+  # Allow mannually trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.CONTINUOUSDEPLOYMENTTESTAPP_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: continuousdeploymenttestregisrty.azurecr.io
+          registryUsername: ${{ secrets.CONTINUOUSDEPLOYMENTTESTAPP_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.CONTINUOUSDEPLOYMENTTESTAPP_REGISTRY_PASSWORD }}
+          containerAppName: continuous-deployment-test-app
+          resourceGroup: continuous-deployment-tests-rg
+          imageToBuild: continuousdeploymenttestregisrty.azurecr.io/continuous-deployment-test-app:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
